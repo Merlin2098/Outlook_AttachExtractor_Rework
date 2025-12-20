@@ -10,6 +10,8 @@ from .date_range_widget import DateRangeWidget
 from .phrase_search_widget import PhraseSearchWidget
 from .progress_widget import ProgressWidget
 from .outlook_folder_selector import OutlookFolderSelector
+from .theme_toggle_widget import ThemeToggleWidget
+from .author_info_widget import AuthorInfoWidget
 
 __all__ = [
     'BaseWidget',
@@ -17,5 +19,7 @@ __all__ = [
     'DateRangeWidget',
     'PhraseSearchWidget',
     'ProgressWidget',
-    'OutlookFolderSelector'
+    'OutlookFolderSelector',
+    'ThemeToggleWidget',
+    'AuthorInfoWidget'
 ]

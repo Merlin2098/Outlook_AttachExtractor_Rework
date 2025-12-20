@@ -1,22 +1,23 @@
 # ui/main_window.py
 """
 Ventana principal de MatrixMAE.
-Orquesta tabs, menús y aplicación de temas.
+Orquesta tabs y aplicación de temas.
 """
 
 from PySide6.QtWidgets import (
     QMainWindow, QTabWidget, QStatusBar, QScrollArea,
-    QMenuBar, QMessageBox, QApplication, QWidget
+    QMessageBox, QApplication, QWidget, QHBoxLayout, QVBoxLayout
 )
 from PySide6.QtCore import Qt, Slot
-from PySide6.QtGui import QAction, QIcon
+from PySide6.QtGui import QIcon
 from pathlib import Path
 import sys
-import os
 
 from config.config_manager import ConfigManager
 from ui.theme_manager import ThemeManager
 from ui.tabs import TabExtractor, TabClasificador
+from ui.widgets.theme_toggle_widget import ThemeToggleWidget
+from ui.widgets.author_info_widget import AuthorInfoWidget
 
 
 class MainWindow(QMainWindow):
@@ -25,7 +26,7 @@ class MainWindow(QMainWindow):
     
     Características:
     - Tabs: Extractor y Clasificador con scroll area
-    - Menú: Archivo, Temas, Ayuda
+    - Toggle de tema (sol/luna) en esquina superior derecha
     - StatusBar con mensajes
     - Integración con ThemeManager
     - Aplica temas a TODA la aplicación (ventanas emergentes incluidas)
@@ -35,11 +36,10 @@ class MainWindow(QMainWindow):
         super().__init__()
         
         self.config = ConfigManager()
-        self.theme_manager = ThemeManager()
+        self.theme_manager = ThemeManager(config_manager=self.config)
         
         self._setup_window()
-        self._setup_menu()
-        self._setup_tabs()
+        self._setup_ui()
         self._setup_statusbar()
         self._connect_signals()
         
@@ -78,79 +78,40 @@ class MainWindow(QMainWindow):
                     print(f"✅ Icono cargado: {icon_path}")
                 else:
                     print(f"⚠️ Icono inválido (isNull): {icon_path}")
-                    print("   Verifica que sea un archivo .ico válido")
             except Exception as e:
                 print(f"❌ Error cargando icono: {e}")
         else:
             print(f"⚠️ Icono no encontrado: {icon_path}")
-            print(f"   Directorio base: {base_dir}")
-            print(f"   Ruta completa: {icon_path.absolute()}")
-            
-            # Intentar rutas alternativas
-            alt_paths = [
-                Path("config/app.ico"),
-                Path("../config/app.ico"),
-                Path("./config/app.ico")
-            ]
-            
-            for alt_path in alt_paths:
-                if alt_path.exists():
-                    try:
-                        icon = QIcon(str(alt_path))
-                        if not icon.isNull():
-                            self.setWindowIcon(icon)
-                            QApplication.instance().setWindowIcon(icon)
-                            print(f"✅ Icono cargado desde ruta alternativa: {alt_path.absolute()}")
-                            break
-                    except:
-                        continue
     
-    def _setup_menu(self):
-        """Configura el menú superior"""
-        menubar = self.menuBar()
+    def _setup_ui(self):
+        """Configura la interfaz de usuario"""
+        # === WIDGET CENTRAL CON LAYOUT ===
+        central_widget = QWidget()
+        main_layout = QVBoxLayout(central_widget)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
         
-        # === MENÚ ARCHIVO ===
-        menu_archivo = menubar.addMenu("&Archivo")
+        # === BARRA SUPERIOR CON TOGGLE DE TEMA ===
+        top_bar = QWidget()
+        top_bar.setFixedHeight(70)
+        top_bar_layout = QHBoxLayout(top_bar)
+        top_bar_layout.setContentsMargins(20, 12, 20, 12)
         
-        # Acción: Salir
-        action_salir = QAction("&Salir", self)
-        action_salir.setShortcut("Ctrl+Q")
-        action_salir.setStatusTip("Salir de la aplicación")
-        action_salir.triggered.connect(self.close)
-        menu_archivo.addAction(action_salir)
+        # Widget de información del autor (izquierda)
+        self.author_info = AuthorInfoWidget()
+        top_bar_layout.addWidget(self.author_info)
         
-        # === MENÚ TEMAS ===
-        menu_temas = menubar.addMenu("&Temas")
+        # Espaciador en el centro
+        top_bar_layout.addStretch()
         
-        # Acción: Tema Claro
-        self.action_tema_claro = QAction("Tema &Claro", self)
-        self.action_tema_claro.setCheckable(True)
-        self.action_tema_claro.setStatusTip("Aplicar tema claro")
-        self.action_tema_claro.triggered.connect(lambda: self._cambiar_tema('light'))
-        menu_temas.addAction(self.action_tema_claro)
+        # Widget de toggle de tema (derecha)
+        tema_inicial = self.theme_manager.get_current_theme()
+        self.theme_toggle = ThemeToggleWidget(initial_theme=tema_inicial)
+        self.theme_toggle.theme_changed.connect(self._on_theme_changed)
         
-        # Acción: Tema Oscuro
-        self.action_tema_oscuro = QAction("Tema &Oscuro", self)
-        self.action_tema_oscuro.setCheckable(True)
-        self.action_tema_oscuro.setStatusTip("Aplicar tema oscuro")
-        self.action_tema_oscuro.triggered.connect(lambda: self._cambiar_tema('dark'))
-        menu_temas.addAction(self.action_tema_oscuro)
+        top_bar_layout.addWidget(self.theme_toggle)
         
-        # Marcar tema actual
-        tema_actual = self.theme_manager._current_theme_name
-        if tema_actual == 'light':
-            self.action_tema_claro.setChecked(True)
-        else:
-            self.action_tema_oscuro.setChecked(True)
-        
-        # === MENÚ AYUDA ===
-        menu_ayuda = menubar.addMenu("A&yuda")
-        
-        # Nota: "Acerca de" eliminado según requerimiento
-    
-    def _setup_tabs(self):
-        """Configura el widget de tabs con scroll area"""
-        # Crear tabs
+        # === TABS ===
         self.tabs = QTabWidget()
         self.tabs.setTabPosition(QTabWidget.TabPosition.North)
         
@@ -161,15 +122,18 @@ class MainWindow(QMainWindow):
         self.tabs.addTab(self.tab_extractor, "🔎 Extractor de Adjuntos")
         self.tabs.addTab(self.tab_clasificador, "📋 Clasificador de Documentos")
         
-        # === AGREGAR SCROLL AREA ===
+        # === SCROLL AREA PARA TABS ===
         scroll_area = QScrollArea()
         scroll_area.setWidget(self.tabs)
-        scroll_area.setWidgetResizable(True)  # Importante para que el contenido se ajuste
+        scroll_area.setWidgetResizable(True)
         scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         
-        # Establecer scroll area como widget central
-        self.setCentralWidget(scroll_area)
+        # === ENSAMBLAR LAYOUT PRINCIPAL ===
+        main_layout.addWidget(top_bar)
+        main_layout.addWidget(scroll_area, 1)
+        
+        self.setCentralWidget(central_widget)
     
     def _setup_statusbar(self):
         """Configura la barra de estado"""
@@ -191,26 +155,26 @@ class MainWindow(QMainWindow):
         self.tab_clasificador.error_occurred.connect(self._on_tab_error)
         self.tab_clasificador.status_changed.connect(self._on_status_message)
     
-    def _cambiar_tema(self, tema: str):
+    def _on_theme_changed(self, tema: str):
         """
-        Cambia el tema de la aplicación.
+        Handler cuando cambia el tema desde el toggle.
         
         Args:
             tema: 'light' o 'dark'
         """
-        # Actualizar checks del menú
-        self.action_tema_claro.setChecked(tema == 'light')
-        self.action_tema_oscuro.setChecked(tema == 'dark')
-        
-        # Cambiar tema en ThemeManager (se guarda en config.json)
+        # Cambiar tema en ThemeManager (se guarda automáticamente en config)
         self.theme_manager.set_theme(tema)
         
-        # ✅ CRÍTICO: Re-aplicar stylesheet después del cambio
+        # Aplicar stylesheet después del cambio
         self._apply_current_theme()
+        
+        # Actualizar widget de autor con nuevo tema
+        is_dark = (tema == 'dark')
+        self.author_info.update_theme(is_dark)
         
         # Mensaje en statusbar
         nombre_tema = "Claro" if tema == 'light' else "Oscuro"
-        self.statusbar.showMessage(f"Tema cambiado a: {nombre_tema}", 3000)
+        self.statusbar.showMessage(f"✨ Tema cambiado a: {nombre_tema}", 3000)
     
     def _apply_current_theme(self):
         """
@@ -222,8 +186,12 @@ class MainWindow(QMainWindow):
         """
         stylesheet = self.theme_manager.get_stylesheet()
         
-        # ✅ Aplicar a QApplication (afecta TODA la app, incluidas ventanas emergentes)
+        # Aplicar a QApplication (afecta TODA la app, incluidas ventanas emergentes)
         QApplication.instance().setStyleSheet(stylesheet)
+        
+        # Actualizar widget de autor con tema actual
+        is_dark = (self.theme_manager.get_current_theme() == 'dark')
+        self.author_info.update_theme(is_dark)
         
         print(f"✅ Tema aplicado globalmente: {self.theme_manager.get_current_theme()}")
     

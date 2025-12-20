@@ -1,5 +1,5 @@
 {
-    "tema": "light",
+    "tema": "dark",
     "ui": {
         "colors": {
             "primary": "#16A085",
@@ -15,5 +15,5 @@
         "beep_on_complete": true,
         "flash_taskbar": true
     },
-    "ultima_actualizacion": "2025-12-20 12:34:55"
+    "ultima_actualizacion": "2025-12-20 13:40:32"
 }

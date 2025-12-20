@@ -114,11 +114,10 @@ class OutlookFolderDialog(QDialog):
         
         layout = QVBoxLayout()
         
-        # Instrucciones
+        # Instrucciones (sin mención de lazy loading)
         info_label = QLabel(
             "⚠️ <b>Importante:</b> Navega hasta la carpeta exacta donde están los correos<br>"
-            "💡 <b>Tip:</b> Haz clic en el ➕ para expandir carpetas<br>"
-            "⚡ <b>Carga rápida:</b> Las subcarpetas se cargan al expandir (lazy loading)"
+            "💡 <b>Tip:</b> Haz clic en el ➕ para expandir carpetas"
         )
         info_label.setWordWrap(True)
         layout.addWidget(info_label)
@@ -136,17 +135,10 @@ class OutlookFolderDialog(QDialog):
         
         layout.addWidget(self.tree)
         
-        # Label de ruta seleccionada
-        self.path_label = QLabel("📍 Ruta seleccionada: (ninguna)")
+        # Label de ruta seleccionada (sin estilos inline, usa el tema)
+        self.path_label = QLabel("📌 Ruta seleccionada: (ninguna)")
         self.path_label.setWordWrap(True)
-        self.path_label.setStyleSheet(
-            "padding: 8px; "
-            "background-color: #e8f4f8; "
-            "border: 1px solid #16A085; "
-            "border-radius: 4px; "
-            "font-family: 'Consolas', 'Courier New', monospace; "
-            "font-size: 11px;"
-        )
+        self.path_label.setObjectName("pathLabel")
         layout.addWidget(self.path_label)
         
         # Botones
@@ -272,7 +264,7 @@ class OutlookFolderDialog(QDialog):
         """Actualiza label con ruta seleccionada"""
         ruta = item.data(0, Qt.ItemDataRole.UserRole)
         if ruta:
-            self.path_label.setText(f"📍 Ruta seleccionada: {ruta}")
+            self.path_label.setText(f"📌 Ruta seleccionada: {ruta}")
     
     def _on_accept(self):
         """Acepta la selección"""

@@ -16,16 +16,17 @@ class ThemeManager:
     Características:
     - Carga temas desde theme_light.json y theme_dark.json
     - Genera stylesheets QSS completos
-    - Persiste selección de tema en config
+    - Persiste selección de tema usando ConfigManager
     - Tema por defecto: 'light'
     """
     
-    def __init__(self, config_dir: Path = None):
+    def __init__(self, config_dir: Path = None, config_manager=None):
         """
         Inicializa el gestor de temas.
         
         Args:
             config_dir: Directorio de configuración (por defecto: ./config)
+            config_manager: Instancia de ConfigManager (opcional)
         """
         if config_dir is None:
             # Detectar directorio base
@@ -39,58 +40,33 @@ class ThemeManager:
         self.config_dir = Path(config_dir)
         self.themes_cache = {}
         
+        # Usar ConfigManager para persistencia
+        if config_manager is None:
+            from config.config_manager import ConfigManager
+            config_manager = ConfigManager()
+        self.config_manager = config_manager
+        
         # Cargar tema guardado o usar default (LIGHT)
         self._current_theme_name = self._load_saved_theme()
         self._current_theme_data = self._load_theme_file(self._current_theme_name)
     
     def _load_saved_theme(self) -> str:
         """
-        Carga el tema guardado desde config.json.
+        Carga el tema guardado desde config usando ConfigManager.
         
         Returns:
             str: Nombre del tema ('light' o 'dark'), default 'light'
         """
-        config_file = self.config_dir / "config.json"
-        
-        if config_file.exists():
-            try:
-                with open(config_file, 'r', encoding='utf-8') as f:
-                    config = json.load(f)
-                    # ✅ Default 'light' en lugar de 'dark'
-                    return config.get('ui', {}).get('theme', 'light')
-            except:
-                pass
-        
-        return 'light'  # ✅ Default LIGHT
+        return self.config_manager.get_tema()
     
     def _save_theme(self, theme_name: str):
         """
-        Guarda el tema seleccionado en config.json.
+        Guarda el tema seleccionado usando ConfigManager.
         
         Args:
             theme_name: Nombre del tema a guardar
         """
-        config_file = self.config_dir / "config.json"
-        
-        try:
-            # Leer config existente
-            if config_file.exists():
-                with open(config_file, 'r', encoding='utf-8') as f:
-                    config = json.load(f)
-            else:
-                config = {}
-            
-            # Actualizar tema
-            if 'ui' not in config:
-                config['ui'] = {}
-            config['ui']['theme'] = theme_name
-            
-            # Guardar
-            with open(config_file, 'w', encoding='utf-8') as f:
-                json.dump(config, f, indent=2, ensure_ascii=False)
-        
-        except Exception as e:
-            print(f"⚠️ No se pudo guardar tema: {e}")
+        self.config_manager.set_tema(theme_name)
     
     def _load_theme_file(self, theme_name: str) -> Dict[str, Any]:
         """
@@ -326,7 +302,7 @@ QCalendarWidget QWidget {
     
     def set_theme(self, theme_name: str):
         """
-        Cambia el tema actual.
+        Cambia el tema actual y lo guarda.
         
         Args:
             theme_name: 'light' o 'dark'

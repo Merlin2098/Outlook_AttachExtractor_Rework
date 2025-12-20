@@ -74,16 +74,12 @@ class TabExtractor(BaseTab):
         outlook_layout.setSpacing(8)
         outlook_layout.setContentsMargins(15, 15, 15, 15)
         
-        outlook_label = QLabel("Selecciona la bandeja de Outlook:")
-        outlook_label.setProperty("class", "subtitle")
-        
         self.outlook_folder_widget = OutlookFolderSelector(
             placeholder="Selecciona bandeja de Outlook...",
             button_text="📧 Explorar Outlook"
         )
         self.outlook_folder_widget.setMinimumHeight(40)
         
-        outlook_layout.addWidget(outlook_label)
         outlook_layout.addWidget(self.outlook_folder_widget)
         outlook_group.setLayout(outlook_layout)
         
@@ -115,7 +111,7 @@ class TabExtractor(BaseTab):
         right_column = QVBoxLayout()
         right_column.setSpacing(10)
         
-        phrase_label = QLabel("Búsqueda por Frases:")
+        phrase_label = QLabel("Búsqueda por Frases (separar con '|'):")
         phrase_label.setProperty("class", "subtitle")
         
         self.phrase_widget = PhraseSearchWidget()
@@ -197,10 +193,25 @@ class TabExtractor(BaseTab):
         has_phrase_filter = len(params['phrases']) > 0
         filter_enabled = self.phrase_widget.is_filter_enabled()
         
-        # ✅ NUEVA LÓGICA: Validar solo si el filtro está habilitado
+        # ✅ VALIDACIÓN: Si filtro habilitado, debe haber frases
         if filter_enabled and not has_phrase_filter:
             self.show_error("❌ Debe especificar al menos una frase de búsqueda o deshabilitar el filtro")
             return
+        
+        # ⚠️ ADVERTENCIA: Comillas sin cerrar
+        if filter_enabled and self.phrase_widget.has_unclosed_quotes():
+            reply = QMessageBox.question(
+                self,
+                "Advertencia: Comilla sin cerrar",
+                "Se detectó una comilla sin cerrar en el filtro de frases.\n\n"
+                "Esto puede causar resultados inesperados.\n\n"
+                "¿Desea continuar de todos modos?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No
+            )
+            
+            if reply == QMessageBox.StandardButton.No:
+                return
         
         outlook_folder = self.outlook_folder_widget.get_folder()
         if not outlook_folder:
@@ -220,10 +231,16 @@ class TabExtractor(BaseTab):
             dt_from, dt_to = params['date_range']
             self.log_info(f"Filtro de fechas: {dt_from.strftime('%d/%m/%Y')} - {dt_to.strftime('%d/%m/%Y')}")
         
-        # ✅ NUEVA LÓGICA: Diferenciar entre filtro habilitado y deshabilitado
+        # ✅ LOGGING MEJORADO: Mostrar información del filtro de frases
         if filter_enabled:
             if has_phrase_filter:
-                self.log_info(f"Frases de búsqueda ({params['search_mode']}): {params['phrases']}")
+                num_frases = len(params['phrases'])
+                self.log_info(f"Modo de búsqueda: {params['search_mode']}")
+                self.log_info(f"Total de frases: {num_frases}")
+                self.logger.separador(char="-", length=60)
+                for i, frase in enumerate(params['phrases'], 1):
+                    self.log_info(f"  {i}. {frase}")
+                self.logger.separador(char="-", length=60)
         else:
             self.log_info("⚠️ FILTRO DE FRASES DESHABILITADO: Procesando TODOS los correos")
         
