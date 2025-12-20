@@ -1,0 +1,19 @@
+{
+    "tema": "light",
+    "ui": {
+        "colors": {
+            "primary": "#16A085",
+            "primary_hover": "#138D75",
+            "primary_pressed": "#0E6655"
+        },
+        "window": {
+            "width": 1280,
+            "height": 649
+        }
+    },
+    "app": {
+        "beep_on_complete": true,
+        "flash_taskbar": true
+    },
+    "ultima_actualizacion": "2025-12-20 12:34:55"
+}

@@ -1,0 +1,16 @@
+PySide6
+pywin32
+openpyxl
+python-dateutil
+pytest
+pytest-qt
+pytest-cov
+pytest-mock
+black
+flake8
+mypy
+isort
+colorlog
+pyinstaller
+polars
+xlsxwriter
