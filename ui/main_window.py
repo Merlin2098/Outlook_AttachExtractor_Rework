@@ -1,6 +1,6 @@
 # ui/main_window.py
 """
-Ventana principal de MatrixMAE.
+Ventana principal de OutlookExtractor.
 Orquesta tabs y aplicación de temas.
 """
 
@@ -22,7 +22,7 @@ from ui.widgets.author_info_widget import AuthorInfoWidget
 
 class MainWindow(QMainWindow):
     """
-    Ventana principal de MatrixMAE.
+    Ventana principal de OutlookExtractor.
     
     Características:
     - Tabs: Extractor y Clasificador con scroll area
@@ -48,7 +48,7 @@ class MainWindow(QMainWindow):
     
     def _setup_window(self):
         """Configura propiedades de la ventana"""
-        self.setWindowTitle("MatrixMAE - Gestor Automatizado de Correos")
+        self.setWindowTitle("Outlook Extractor - Descarga masiva de Adjuntos")
         
         # Tamaño desde configuración
         width = self.config.get('ui.window.width', 1000)
@@ -214,6 +214,7 @@ class MainWindow(QMainWindow):
         # Notificación sonora si está habilitada
         if self.config.get('app.beep_on_complete', True):
             self._beep()
+            self._flash_window()
     
     @Slot(dict)
     def _on_classification_started(self, params: dict):
@@ -254,9 +255,66 @@ class MainWindow(QMainWindow):
             winsound.MessageBeep(winsound.MB_OK)
         except:
             pass
+
+    def _flash_window(self):
+        """Hace parpadear la ventana en el taskbar"""
+        try:
+            from utils.notification_utils import flash_window
+            hwnd = int(self.winId())
+            flash_window(hwnd, count=3, flash_rate=500)
+        except Exception as e:
+            print(f"⚠️ Error al hacer parpadear ventana: {e}")
+    
     
     def closeEvent(self, event):
-        """Override del evento de cierre"""
+        """
+        Override del evento de cierre.
+        Verifica si hay procesos activos y solicita confirmación.
+        """
+        # Verificar si hay extracción en proceso
+        if self.tab_extractor.is_running():
+            reply = QMessageBox.question(
+                self,
+                "Proceso en ejecución",
+                "Hay una extracción de adjuntos en proceso.\n\n"
+                "¿Desea cancelar el proceso y cerrar la aplicación?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No
+            )
+            
+            if reply == QMessageBox.StandardButton.No:
+                event.ignore()
+                return
+            else:
+                # Cancelar proceso antes de cerrar
+                if self.tab_extractor.worker:
+                    self.tab_extractor.worker.cancel()
+                # Dar tiempo para limpieza
+                import time
+                time.sleep(0.5)
+        
+        # Verificar si hay clasificación en proceso
+        if hasattr(self.tab_clasificador, 'is_running') and self.tab_clasificador.is_running():
+            reply = QMessageBox.question(
+                self,
+                "Proceso en ejecución",
+                "Hay una clasificación de documentos en proceso.\n\n"
+                "¿Desea cancelar el proceso y cerrar la aplicación?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No
+            )
+            
+            if reply == QMessageBox.StandardButton.No:
+                event.ignore()
+                return
+            else:
+                # Cancelar proceso antes de cerrar
+                if hasattr(self.tab_clasificador, 'worker') and self.tab_clasificador.worker:
+                    self.tab_clasificador.worker.cancel()
+                # Dar tiempo para limpieza
+                import time
+                time.sleep(0.5)
+        
         # Guardar tamaño de ventana
         self.config.set('ui.window.width', self.width())
         self.config.set('ui.window.height', self.height())

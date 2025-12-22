@@ -4,6 +4,7 @@ Worker base para ejecutar operaciones en threads separados.
 Proporciona señales y manejo de COM para todos los workers.
 """
 
+import time
 import pythoncom
 from PySide6.QtCore import QRunnable, Signal, QObject
 
@@ -18,12 +19,14 @@ class WorkerSignals(QObject):
         message: Emitido para mensajes del backend (fase, nivel, texto)
         progress: Emitido para progreso (actual, total, porcentaje)
         state_changed: Emitido cuando cambia el estado del backend (EstadoProceso)
+        time_elapsed: Emitido para tiempo transcurrido en segundos (float)
     """
     finished = Signal(dict)
     error = Signal(str)
     message = Signal(object, object, str)  # fase, nivel, texto
     progress = Signal(int, int, float)      # actual, total, porcentaje
     state_changed = Signal(object)          # estado
+    time_elapsed = Signal(float)            # segundos transcurridos
 
 
 class BaseWorker(QRunnable):
@@ -46,6 +49,9 @@ class BaseWorker(QRunnable):
         # Control de cancelación
         self._cancelled = False
         
+        # Tracking de tiempo
+        self._start_time = None
+        
         # Auto-delete cuando termine
         self.setAutoDelete(True)
     
@@ -65,6 +71,9 @@ class BaseWorker(QRunnable):
         try:
             # Inicializar COM (necesario para win32com)
             pythoncom.CoInitialize()
+            
+            # Iniciar tracking de tiempo
+            self._start_time = time.time()
             
             # Ejecutar proceso principal (implementado por subclases)
             resultado = self.process()
@@ -125,7 +134,7 @@ class BaseWorker(QRunnable):
     
     def emit_progress(self, actual: int, total: int, porcentaje: float):
         """
-        Emite señal de progreso.
+        Emite señal de progreso y tiempo transcurrido.
         
         Args:
             actual: Cantidad actual procesada
@@ -134,6 +143,11 @@ class BaseWorker(QRunnable):
         """
         if not self._cancelled:
             self.signals.progress.emit(actual, total, porcentaje)
+            
+            # Emitir tiempo transcurrido si ya se inició el tracking
+            if self._start_time is not None:
+                elapsed = time.time() - self._start_time
+                self.signals.time_elapsed.emit(elapsed)
     
     def emit_state_changed(self, estado):
         """

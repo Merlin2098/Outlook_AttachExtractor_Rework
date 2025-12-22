@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # main.py
 """
-Punto de entrada de MatrixMAE.
+Punto de entrada de OutlookExtractor.
 Inicializa aplicación con splash screen y logging centralizado.
 """
 
@@ -43,13 +43,13 @@ def main():
     logger = get_logger()
     logger.habilitar_consola()  # Habilitar output a consola durante desarrollo
     
-    logger.info("Iniciando MatrixMAE...")
+    logger.info("Iniciando OutlookExtractor...")
     
     # === CREAR APLICACIÓN ===
     app = QApplication(sys.argv)
-    app.setApplicationName("MatrixMAE")
+    app.setApplicationName("OutlookExtractor")
     app.setApplicationVersion("1.0.0")
-    app.setOrganizationName("MatrixMAE")
+    app.setOrganizationName("OutlookExtractor")
     
     logger.info("QApplication creada exitosamente")
     
@@ -123,13 +123,13 @@ def main():
         logger.info(f"Aplicación finalizada con código: {exit_code}")
         
         # Finalizar logging
-        logger.finalizar("MatrixMAE cerrado correctamente")
+        logger.finalizar("OutlookExtractor cerrado correctamente")
         
         sys.exit(exit_code)
         
     except Exception as e:
         logger.error(f"Error crítico en la aplicación: {str(e)}", exc_info=True)
-        logger.finalizar("MatrixMAE cerrado con errores")
+        logger.finalizar("OutlookExtractor cerrado con errores")
         sys.exit(1)
 
 

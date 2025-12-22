@@ -43,19 +43,29 @@ class ExtractorWorker(BaseWorker):
     
     def process(self):
         """
-        Ejecuta la extracción de adjuntos.
+        Ejecuta la extracción de adjuntos con gestión de energía.
         
         Returns:
             dict: Estadísticas del proceso
         """
-        resultado = self.extractor.extraer_adjuntos(
-            frases=self.frases,
-            destino=self.destino,
-            outlook_folder=self.outlook_folder,
-            fecha_inicio=self.fecha_inicio,
-            fecha_fin=self.fecha_fin
-        )
-        return resultado
+        from utils.power_manager import prevent_sleep_mode, allow_sleep_mode
+        
+        try:
+            # Prevenir suspensión del sistema durante el proceso
+            prevent_sleep_mode()
+            
+            resultado = self.extractor.extraer_adjuntos(
+                frases=self.frases,
+                destino=self.destino,
+                outlook_folder=self.outlook_folder,
+                fecha_inicio=self.fecha_inicio,
+                fecha_fin=self.fecha_fin
+            )
+            return resultado
+            
+        finally:
+            # Restaurar comportamiento normal de suspensión
+            allow_sleep_mode()
     
     def _on_mensaje(self, fase, nivel, texto: str):
         """Callback para mensajes del backend"""

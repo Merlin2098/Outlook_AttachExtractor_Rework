@@ -41,6 +41,7 @@ class TabExtractor(BaseTab):
         self.backend = None
         self.worker = None
         self.threadpool = QThreadPool.globalInstance()
+        self._is_running = False  # Flag para rastrear si hay proceso activo
     
     def _setup_ui(self):
         """Construye interfaz del extractor con layout horizontal para criterios"""
@@ -129,8 +130,7 @@ class TabExtractor(BaseTab):
         # === SECCIÓN: PROGRESO ===
         progress_group = QGroupBox("📊 Progreso de Extracción")
         progress_group.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        progress_group.setMinimumHeight(120)
-        progress_group.setMaximumHeight(160)
+        progress_group.setMinimumHeight(140)
         progress_layout = QVBoxLayout()
         progress_layout.setSpacing(8)
         progress_layout.setContentsMargins(15, 15, 15, 15)
@@ -260,6 +260,7 @@ class TabExtractor(BaseTab):
             self.worker.signals.message.connect(self._on_worker_message)
             self.worker.signals.progress.connect(self._on_worker_progress)
             self.worker.signals.state_changed.connect(self._on_worker_state)
+            self.worker.signals.time_elapsed.connect(self.progress_widget.set_time_elapsed)
             
             self.threadpool.start(self.worker)
             self.extraction_started.emit(params)
@@ -287,11 +288,21 @@ class TabExtractor(BaseTab):
     
     def _set_running_state(self, running: bool):
         """Actualiza estado de controles durante ejecución"""
+        self._is_running = running  # Actualizar flag
         self.start_btn.setEnabled(not running)
         self.cancel_btn.setEnabled(running)
         self.folder_widget.setEnabled(not running)
         self.date_range_widget.setEnabled(not running)
         self.phrase_widget.setEnabled(not running)
+    
+    def is_running(self) -> bool:
+        """
+        Verifica si hay un proceso de extracción activo.
+        
+        Returns:
+            bool: True si hay extracción en ejecución
+        """
+        return self._is_running
     
     @Slot(int, str)
     def update_progress(self, value: int, status: str):
@@ -313,6 +324,8 @@ class TabExtractor(BaseTab):
         self.logger.escribir_estadisticas(stats)
         self.log_success("✅ Extracción finalizada correctamente")
         self.extraction_finished.emit(stats)
+        # Notificar con sonido y parpadeo de ventana
+        self._notify_completion()
     
     @Slot(str)
     def on_extraction_error(self, error_msg: str):
@@ -343,9 +356,10 @@ class TabExtractor(BaseTab):
         
         if hasattr(self.worker, 'extractor') and hasattr(self.worker.extractor, 'estadisticas'):
             stats = self.worker.extractor.estadisticas
+            
             self.progress_widget.set_stats(
-                processed=stats.correos_procesados,
-                success=stats.adjuntos_descargados,
+                processed=stats.adjuntos_descargados,
+                total=stats.correos_procesados,
                 errors=stats.adjuntos_fallidos
             )
     
@@ -353,3 +367,15 @@ class TabExtractor(BaseTab):
     def _on_worker_state(self, estado):
         """Slot para cambio de estado"""
         self.log_info(f"Estado: {estado.value}")
+    
+    def _notify_completion(self):
+        """Notifica la finalización del proceso con sonido y parpadeo"""
+        try:
+            from utils.notification_utils import notify_completion
+            # Obtener handle de la ventana principal
+            main_window = self.window()
+            if main_window:
+                hwnd = int(main_window.winId())
+                notify_completion(hwnd)
+        except Exception as e:
+            print(f"⚠️ Error en notificación: {e}")

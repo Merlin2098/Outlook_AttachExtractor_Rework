@@ -1,4 +1,4 @@
-"""Utilidades para manejo seguro de fechas en MatrixMAE."""
+"""Utilidades para manejo seguro de fechas en OutlookExtractor."""
 
 from datetime import datetime, time
 

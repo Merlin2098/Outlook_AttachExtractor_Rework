@@ -1,6 +1,6 @@
 # ui/theme_manager.py
 """
-Gestor de temas para MatrixMAE.
+Gestor de temas para OutlookExtractor.
 Lee configuraciones de theme_light.json y theme_dark.json.
 """
 

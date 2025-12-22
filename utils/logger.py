@@ -1,4 +1,4 @@
-"""Sistema de logging centralizado para MatrixMAE con gestión automática."""
+"""Sistema de logging centralizado para OutlookExtractor con gestión automática."""
 
 import logging
 import sys
@@ -9,7 +9,7 @@ from typing import Optional
 
 class MatrixLogger:
     """
-    Gestor de logging centralizado híbrido para MatrixMAE.
+    Gestor de logging centralizado híbrido para OutlookExtractor.
     
     Características:
     - Logger único de sesión para toda la aplicación
@@ -59,12 +59,12 @@ class MatrixLogger:
         self.timestamp = datetime.now().strftime("%d.%m.%Y_%H.%M.%S")
         
         # Crear logger principal
-        self.logger = logging.getLogger("MatrixMAE")
+        self.logger = logging.getLogger("OutlookExtractor")
         self.logger.setLevel(logging.DEBUG)
         self.logger.handlers.clear()  # Limpiar handlers existentes
         
         # Configurar archivo de sesión general (todas las operaciones)
-        self.archivo_sesion = carpeta_logs / f"MatrixMAE_sesion_{self.timestamp}.log"
+        self.archivo_sesion = carpeta_logs / f"OutlookExtractor_sesion_{self.timestamp}.log"
         handler_sesion = logging.FileHandler(
             self.archivo_sesion,
             mode='w',
@@ -75,7 +75,7 @@ class MatrixLogger:
         self.logger.addHandler(handler_sesion)
         
         # Configurar archivo de errores global
-        self.archivo_errores = carpeta_logs / f"MatrixMAE_errores_{self.timestamp}.log"
+        self.archivo_errores = carpeta_logs / f"OutlookExtractor_errores_{self.timestamp}.log"
         handler_errores = logging.FileHandler(
             self.archivo_errores,
             mode='w',
@@ -116,7 +116,7 @@ class MatrixLogger:
         separador = "=" * 80
         encabezado = f"""
 {separador}
-MATRIXMAE - LOG DE SESIÓN
+OUTLOOKEXTRACTOR - LOG DE SESIÓN
 {separador}
 Inicio de sesión: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 Carpeta de logs: {self.carpeta_logs.absolute()}
@@ -134,7 +134,7 @@ Carpeta de logs: {self.carpeta_logs.absolute()}
         fecha_limite = datetime.now() - timedelta(days=dias)
         
         logs_eliminados = 0
-        for archivo in self.carpeta_logs.glob("MatrixMAE_*.log"):
+        for archivo in self.carpeta_logs.glob("OutlookExtractor_*.log"):
             try:
                 fecha_modificacion = datetime.fromtimestamp(archivo.stat().st_mtime)
                 if fecha_modificacion < fecha_limite:
@@ -155,14 +155,13 @@ Carpeta de logs: {self.carpeta_logs.absolute()}
         """
         # Obtener todos los archivos de sesión (ordenados por fecha de modificación)
         archivos_sesion = sorted(
-            self.carpeta_logs.glob("MatrixMAE_sesion_*.log"),
+            self.carpeta_logs.glob("OutlookExtractor_sesion_*.log"),
             key=lambda f: f.stat().st_mtime,
             reverse=True
         )
         
         archivos_errores = sorted(
-            self.carpeta_logs.glob("MatrixMAE_errores_*.log"),
-            key=lambda f: f.stat().st_mtime,
+            self.carpeta_logs.glob("OutlookExtractor_errores_*.log"),
             reverse=True
         )
         

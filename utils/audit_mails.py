@@ -1,4 +1,4 @@
-"""Sistema de auditoría de correos procesados para MatrixMAE.
+"""Sistema de auditoría de correos procesados para OutlookExtractor.
 
 Dependencias:
     - polars: Para manejo eficiente de DataFrames

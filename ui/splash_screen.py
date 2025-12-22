@@ -1,6 +1,6 @@
 # ui/splash_screen.py
 """
-Splash screen de inicio para MatrixMAE.
+Splash screen de inicio para OutlookExtractor.
 Muestra logo, versión y barra de progreso durante la carga.
 """
 
@@ -85,7 +85,7 @@ class SplashScreen(QSplashScreen):
         painter.drawText(
             0, 160, self.splash_width, 40,
             Qt.AlignmentFlag.AlignCenter,
-            "MatrixMAE"
+            "OutlookExtractor"
         )
         
         # Subtítulo
@@ -223,7 +223,7 @@ if __name__ == "__main__":
     # Crear ventana principal (simulada)
     def show_main_window():
         main_window = QMainWindow()
-        main_window.setWindowTitle("MatrixMAE")
+        main_window.setWindowTitle("OutlookExtractor")
         main_window.resize(800, 600)
         main_window.show()
         splash.close()

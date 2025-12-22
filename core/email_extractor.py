@@ -68,6 +68,7 @@ class ExtractorAdjuntosOutlook(BackendBase):
         self.outlook = None
         self.namespace = None
         self.auditor = None  # Se inicializa en extraer_adjuntos
+        self._cancelado = False  # Flag para cancelación
         
         self.config = {
             "max_reintentos": 3,
@@ -450,6 +451,15 @@ class ExtractorAdjuntosOutlook(BackendBase):
                 
                 del item
                 
+                # Verificar cancelación
+                if self._cancelado:
+                    self._enviar_mensaje(
+                        FaseProceso.FILTRADO,
+                        NivelMensaje.WARNING,
+                        "Proceso cancelado por el usuario"
+                    )
+                    break
+                
                 if idx % 100 == 0:
                     self._actualizar_progreso(idx, total_items)
                     
@@ -587,6 +597,15 @@ class ExtractorAdjuntosOutlook(BackendBase):
             except Exception as e:
                 self.logger.error(f"Error procesando correo: {str(e)}")
             
+            # Verificar cancelación
+            if self._cancelado:
+                self._enviar_mensaje(
+                    FaseProceso.DESCARGA,
+                    NivelMensaje.WARNING,
+                    "Proceso cancelado por el usuario"
+                )
+                break
+            
             self._actualizar_progreso(idx, total_correos)
             
             if idx % 100 == 0:
@@ -719,6 +738,19 @@ class ExtractorAdjuntosOutlook(BackendBase):
             'tasa_exito': self.estadisticas.tasa_exito,
             'tiempo_total': self.estadisticas.tiempo_total
         }
+    
+    def cancelar(self):
+        """
+        Marca el proceso para cancelación.
+        Los loops verificarán este flag y detendrán el procesamiento.
+        """
+        self._cancelado = True
+        self._enviar_mensaje(
+            self.fase_actual,
+            NivelMensaje.WARNING,
+            "Cancelación solicitada..."
+        )
+        self.logger.warning("Proceso de extracción cancelado por el usuario")
     
     def _generar_resultado_vacio(self) -> dict:
         """Genera resultado vacío"""

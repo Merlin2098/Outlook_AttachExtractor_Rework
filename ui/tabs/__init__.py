@@ -1,6 +1,6 @@
 # ui/tabs/__init__.py
 """
-Módulo de tabs para MatrixMAE.
+Módulo de tabs para OutlookExtractor.
 Exporta todos los tabs disponibles.
 """
 

@@ -1,6 +1,6 @@
 # ui/widgets/__init__.py
 """
-Módulo de widgets reutilizables para MatrixMAE.
+Módulo de widgets reutilizables para OutlookExtractor.
 Exporta todos los widgets disponibles.
 """
 
