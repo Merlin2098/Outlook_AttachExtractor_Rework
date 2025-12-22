@@ -358,8 +358,8 @@ class TabExtractor(BaseTab):
             stats = self.worker.extractor.estadisticas
             
             self.progress_widget.set_stats(
-                processed=stats.adjuntos_descargados,
-                total=stats.correos_procesados,
+                processed=actual,
+                total=total,
                 errors=stats.adjuntos_fallidos
             )
     
