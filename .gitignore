@@ -12,7 +12,6 @@ logs/
 *.log
 
 # Archivos específicos
-treemap.py
 treemap.md
 
 # __pycache__ y temporales de Python
@@ -27,9 +26,6 @@ __pycache__/
 .cache/
 .mypy_cache/
 .pytest_cache/
-
-#test
-test/
 
 # Configuración de PyInstaller
 *.spec
