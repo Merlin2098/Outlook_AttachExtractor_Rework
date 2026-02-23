@@ -17,3 +17,14 @@ polars
 xlsxwriter
 pre-commit
 pathspec
+
+# Added by Tinker installer (missing deps)
+pandas
+pyarrow
+fastexcel
+duckdb
+jsonschema
+pydantic
+hypothesis
+setuptools
+wheel
