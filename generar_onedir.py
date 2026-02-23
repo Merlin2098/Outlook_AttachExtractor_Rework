@@ -10,12 +10,12 @@ Framework: PySide6 con integración Outlook COM
 
 import os
 import sys
-import pkg_resources
 import subprocess
 import shutil
 from pathlib import Path
 import time
 import threading
+from importlib import metadata as importlib_metadata
 
 # ==========================================================
 # CONFIGURACIÓN
@@ -53,13 +53,24 @@ def validar_entorno_virtual():
     print(f"✅ Entorno virtual detectado: {sys.prefix}\n")
 
     try:
-        paquetes = sorted([(pkg.key, pkg.version) for pkg in pkg_resources.working_set])
+        paquetes = sorted(
+            [
+                (
+                    (dist.metadata.get("Name") or "").lower(),
+                    dist.version
+                )
+                for dist in importlib_metadata.distributions()
+                if dist.metadata.get("Name")
+            ],
+            key=lambda x: x[0]
+        )
         print(f"📦 Librerías instaladas ({len(paquetes)}):")
         for nombre, version in paquetes:
-            flag = "🧹 (excluir)" if nombre in EXCLUSIONES else "✅"
+            nombre_norm = nombre.replace("-", "_")
+            flag = "🧹 (excluir)" if nombre_norm in EXCLUSIONES else "✅"
             print(f"   {flag} {nombre:<25} {version}")
     except Exception:
-        print("⚠️ No se pudo listar paquetes con pkg_resources (no crítico).")
+        print("⚠️ No se pudo listar paquetes instalados (no crítico).")
     print("\n")
 
 # ==========================================================
