@@ -12,6 +12,7 @@ mypy
 isort
 colorlog
 pyinstaller
+pyyaml
 polars
 xlsxwriter
 pre-commit

@@ -1,5 +1,6 @@
 """Clasificador de documentos según estado de firma."""
 
+import re
 import shutil
 from dataclasses import dataclass
 from datetime import datetime
@@ -39,6 +40,10 @@ class ClasificadorDocumentos(BackendBase):
     Clasifica documentos en carpetas "Firmados" y "Sin Firmar" basándose
     en palabras clave en el nombre del archivo.
     """
+    PATRONES_FIRMADO = (
+        re.compile(r"\bfirmad[oa]s?\b", re.IGNORECASE),
+        re.compile(r"(?<!not[\s_-])\bsigned\b", re.IGNORECASE),
+    )
     
     def __init__(self, 
                  callback_mensaje=None,
@@ -181,34 +186,16 @@ class ClasificadorDocumentos(BackendBase):
             carpeta_sin_firmar: Carpeta destino para sin firmar
             
         Returns:
-            str: Resultado ('firmado', 'sin_firmar', 'omitido', 'error')
+            str: Resultado ('firmado', 'sin_firmar', 'error')
         """
-        nombre_lower = archivo.name.lower()
+        nombre_archivo = archivo.name
         
         try:
-            # Detectar "sin firmar" (prioridad)
-            es_sin_firmar = (
-                "sin firmar" in nombre_lower or 
-                "sin_firmar" in nombre_lower or
-                "sinfirmar" in nombre_lower or
-                "not signed" in nombre_lower or
-                "not_signed" in nombre_lower or
-                "notsigned" in nombre_lower
+            es_firmado = any(
+                patron.search(nombre_archivo) for patron in self.PATRONES_FIRMADO
             )
-            
-            if es_sin_firmar:
-                destino = carpeta_sin_firmar / archivo.name
-                shutil.move(str(archivo), str(destino))
-                self.estadisticas.sin_firmar += 1
-                self._enviar_mensaje(
-                    FaseProceso.CLASIFICANDO,
-                    NivelMensaje.WARNING,
-                    f"⚠️ Sin firmar: {archivo.name}"
-                )
-                return 'sin_firmar'
-            
-            # Detectar "firmado"
-            elif "firmado" in nombre_lower or "signed" in nombre_lower:
+
+            if es_firmado:
                 destino = carpeta_firmados / archivo.name
                 shutil.move(str(archivo), str(destino))
                 self.estadisticas.firmados += 1
@@ -219,10 +206,17 @@ class ClasificadorDocumentos(BackendBase):
                 )
                 return 'firmado'
             
-            # No coincide con ningún criterio
+            # Si no coincide con patrón de firmado, se archiva como sin firmar.
             else:
-                self.estadisticas.omitidos += 1
-                return 'omitido'
+                destino = carpeta_sin_firmar / archivo.name
+                shutil.move(str(archivo), str(destino))
+                self.estadisticas.sin_firmar += 1
+                self._enviar_mensaje(
+                    FaseProceso.CLASIFICANDO,
+                    NivelMensaje.WARNING,
+                    f"⚠️ Sin firmar: {archivo.name}"
+                )
+                return 'sin_firmar'
                 
         except PermissionError:
             self.estadisticas.errores += 1
